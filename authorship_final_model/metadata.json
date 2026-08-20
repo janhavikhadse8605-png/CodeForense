@@ -1,0 +1,5 @@
+{
+    "base_model": "microsoft/codebert-base",
+    "test_accuracy": 0.9832076764907471,
+    "timestamp": "Thu Aug 20 13:29:06 2026"
+}

@@ -1,0 +1,27 @@
+{
+    "model_name": "microsoft/codebert-base",
+    "base_model": "microsoft/codebert-base",
+    "test_accuracy": 0.9832076764907471,
+    "timestamp": "Thu Aug 20 13:29:06 2026",
+    "max_length": 256,
+    "label_mapping": {
+        "0": "HUMAN",
+        "1": "AI"
+    },
+    "feature_groups": [
+        "naming",
+        "structure",
+        "comments",
+        "repetition",
+        "complexity",
+        "formatting"
+    ],
+    "feature_dimensions": {
+        "naming": 8,
+        "structure": 10,
+        "comments": 6,
+        "repetition": 5,
+        "complexity": 6,
+        "formatting": 6
+    }
+}
