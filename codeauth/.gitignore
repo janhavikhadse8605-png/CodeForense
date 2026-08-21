@@ -27,3 +27,13 @@ frontend/.vite/
 tmp/
 temp/
 *.tmp
+
+# Trained stylometric model is small (1.2 MB) and committed so a fresh clone
+# runs without a training pass. Regenerate with ml_training/train_stylometric.py.
+!backend/model_files/stylometric_model.pkl
+
+# Dataset CSVs are ~6 MB and fully regenerable: ml_training/fetch_dataset.py
+backend/ml_training/data/
+
+# Local MCP config may carry tokens in its "env" block; commit the example only.
+backend/mcp_servers.json

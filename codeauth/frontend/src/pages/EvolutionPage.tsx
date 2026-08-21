@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Plus, Trash2, AlertTriangle, Clock } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyzeEvolution } from '../api/client';
+import PageHeader from '../components/PageHeader';
+import LanguageSelect, { LanguageCaveat } from '../components/LanguageSelect';
 
 interface VersionInput {
   label: string;
@@ -44,7 +46,7 @@ export default function EvolutionPage() {
     { label: 'Commit v1.0 (Initial)', code: SAMPLE_V1, timestamp: '2026-08-01' },
     { label: 'Commit v2.0 (Refactor)', code: SAMPLE_V2, timestamp: '2026-08-15' },
   ]);
-  const [language] = useState('python');
+  const [language, setLanguage] = useState('python');
   const [loading, setLoading] = useState(false);
   const [evolutionResult, setEvolutionResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,26 +98,25 @@ export default function EvolutionPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Code Evolution Analysis</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Track authorship shifts, stylometric drift, and AI-pattern emergence across versions and commits.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={addVersion} className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Add Version
-          </button>
-          <button
-            onClick={handleAnalyze}
-            disabled={loading}
-            className="btn-primary text-xs py-2.5 px-4 flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <TrendingUp className="w-3.5 h-3.5" /> {loading ? 'Analyzing...' : 'Run Evolution Analysis'}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Code Evolution"
+        eyebrowIcon={<TrendingUp className="w-[15px] h-[15px]" />}
+        title="Authorship drift across versions"
+        description="Compare successive revisions of the same file to see how its stylometric profile moves, and where it shifts abruptly."
+        actions={
+          <>
+            <LanguageSelect value={language} onChange={setLanguage} />
+            <button onClick={addVersion} className="btn-secondary text-xs !py-2 !px-3">
+              <Plus className="w-3.5 h-3.5" /> Add version
+            </button>
+            <button onClick={handleAnalyze} disabled={loading} className="btn-primary text-xs !py-2.5 !px-4">
+              <TrendingUp className="w-3.5 h-3.5" /> {loading ? 'Analyzing...' : 'Run analysis'}
+            </button>
+          </>
+        }
+      />
+
+      <LanguageCaveat language={language} />
 
       {error && (
         <div className="card p-4 border-red-200 flex items-center gap-2 text-red-500 text-sm">
@@ -132,10 +133,11 @@ export default function EvolutionPage() {
                 type="text"
                 value={v.label}
                 onChange={e => updateVersion(i, 'label', e.target.value)}
-                className="font-semibold text-sm text-slate-800 bg-transparent border-b border-cream-200 focus:border-coral-500 focus:outline-none px-1 py-0.5"
+                aria-label={`Label for version ${i + 1}`}
+                className="font-semibold text-sm bg-transparent border-b border-[var(--line-strong)] focus:border-coral-500 focus:outline-none px-1 py-0.5 min-w-0 flex-1 mr-2"
               />
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">Step {i + 1}</span>
+                <span className="text-xs text-[var(--text-muted)] shrink-0">Step {i + 1}</span>
                 {versions.length > 2 && (
                   <button
                     onClick={() => removeVersion(i)}
@@ -152,7 +154,7 @@ export default function EvolutionPage() {
               onChange={e => updateVersion(i, 'code', e.target.value)}
               placeholder={`Paste source code for ${v.label}...`}
               rows={8}
-              className="w-full font-mono text-xs p-3 rounded-xl bg-cream-50 border border-cream-200 focus:ring-2 focus:ring-coral-400 focus:outline-none resize-none"
+              className="field font-mono !text-xs resize-none"
             />
           </div>
         ))}
@@ -169,15 +171,16 @@ export default function EvolutionPage() {
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis dataKey="label" stroke="#64748B" fontSize={12} />
-                  <YAxis stroke="#64748B" fontSize={12} unit="%" domain={[0, 100]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                  <XAxis dataKey="label" stroke="var(--text-muted)" fontSize={12} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} unit="%" domain={[0, 100]} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--surface)',
                       borderRadius: '12px',
-                      border: '1px solid #E2E8F0',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                      border: '1px solid var(--line)',
+                      color: 'var(--text-strong)',
+                      boxShadow: 'var(--shadow-soft)',
                     }}
                   />
                   <Line type="monotone" dataKey="AI_Probability" stroke="#EF4444" strokeWidth={2.5} dot={{ r: 5 }} />

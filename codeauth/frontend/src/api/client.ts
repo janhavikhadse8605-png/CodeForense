@@ -108,8 +108,60 @@ export const getReport = (id: string) =>
 
 // ─── Investigation ────────────────────────────────
 
-export const runInvestigation = (data: { repository_id?: string; task?: string }) =>
-  api.post('/investigation/run', data).then(r => r.data);
+export const runInvestigation = (data: {
+  repository_id?: string;
+  task?: string;
+  parameters?: Record<string, string>;
+}) =>
+  api.post('/investigation/run', data, { timeout: 300000 }).then(r => r.data);
+
+// ─── MCP ──────────────────────────────────────────
+
+export const mcpStatus = () =>
+  api.get('/mcp/status', { timeout: 180000 }).then(r => r.data);
+
+export const mcpReload = () =>
+  api.post('/mcp/reload').then(r => r.data);
+
+export const mcpCall = (data: { server: string; tool: string; arguments?: Record<string, unknown> }) =>
+  api.post('/mcp/call', data, { timeout: 300000 }).then(r => r.data);
+
+// ─── GitHub ───────────────────────────────────────
+
+export const githubStatus = () =>
+  api.get('/github/status').then(r => r.data);
+
+export const githubInspect = (data: { repository_url: string; commit_limit?: number; token?: string }) =>
+  api.post('/github/inspect', data).then(r => r.data);
+
+export const githubAnalyze = (data: {
+  repository_url: string;
+  max_files?: number;
+  include_commits?: boolean;
+  commit_limit?: number;
+  token?: string;
+}) => api.post('/github/analyze', data, { timeout: 600000 }).then(r => r.data);
+
+export const githubEvolution = (data: {
+  repository_url: string;
+  file_path: string;
+  commit_limit?: number;
+  language?: string;
+  token?: string;
+}) => api.post('/github/evolution', data, { timeout: 600000 }).then(r => r.data);
+
+// ─── Chat ─────────────────────────────────────────
+
+export const sendChat = (message: string) =>
+  api.post('/chat', { message }, { timeout: 300000 }).then(r => r.data);
+
+export const getChatSuggestions = () =>
+  api.get('/chat/suggestions').then(r => r.data);
+
+// ─── Model card (measured metrics + warnings) ─────
+
+export const getModelCard = () =>
+  api.get('/model/card').then(r => r.data);
 
 // ─── Model Info ───────────────────────────────────
 

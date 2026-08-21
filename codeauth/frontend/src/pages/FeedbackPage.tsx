@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ThumbsUp, ThumbsDown, CheckCircle2, Clock } from 'lucide-react';
-import { getFeedback, submitFeedback } from '../api/client';
-import type { FeedbackData } from '../types';
+import { ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare, TriangleAlert } from 'lucide-react';
+import { getFeedback, submitFeedback, getHistory } from '../api/client';
+import type { FeedbackData, HistoryItem } from '../types';
+import PageHeader from '../components/PageHeader';
 
 export default function FeedbackPage() {
   const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewerLabel, setReviewerLabel] = useState<'correct' | 'incorrect'>('correct');
   const [actualAuthorship, setActualAuthorship] = useState('human');
-  const [prediction] = useState('AI-LIKELY');
-  const [confidence] = useState(88);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [analysisId, setAnalysisId] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -24,15 +25,27 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     fetchFeedback();
+    getHistory(100, 0)
+      .then(res => {
+        const items: HistoryItem[] = res.items || [];
+        setHistory(items);
+        if (items.length > 0) setAnalysisId(items[0].id);
+      })
+      .catch(() => {});
   }, []);
+
+  /** A review must reference the prediction actually produced, not a placeholder. */
+  const target = history.find(h => h.id === analysisId) ?? null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!target) return;
     setSubmitting(true);
     try {
       await submitFeedback({
-        prediction,
-        confidence,
+        analysis_id: target.id,
+        prediction: target.prediction,
+        confidence: target.confidence,
         reviewer_label: reviewerLabel,
         actual_authorship: actualAuthorship,
         comment,
@@ -49,12 +62,12 @@ export default function FeedbackPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Reviewer Feedback Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Collect human-in-the-loop validation, track model accuracy against expert reviews, and curate active learning datasets.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Reviewer Feedback"
+        eyebrowIcon={<MessageSquare className="w-[15px] h-[15px]" />}
+        title="Human-in-the-loop review"
+        description="Record whether a stored prediction matched expert judgement. The agreement rate below is computed only from these reviews."
+      />
 
       {/* Stats row */}
       {feedbackData?.stats && (
@@ -85,6 +98,37 @@ export default function FeedbackPage() {
             Submit Expert Review
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="fb-analysis" className="text-xs font-semibold text-slate-700 block mb-1">
+                Analysis under review
+              </label>
+              <select
+                id="fb-analysis"
+                value={analysisId}
+                onChange={e => setAnalysisId(e.target.value)}
+                className="field !text-xs cursor-pointer"
+                disabled={history.length === 0}
+              >
+                {history.length === 0 && <option value="">No analyses recorded yet</option>}
+                {history.map(h => (
+                  <option key={h.id} value={h.id}>
+                    {h.prediction} · {h.confidence}% · {h.language} · {new Date(h.created_at).toLocaleString()}
+                  </option>
+                ))}
+              </select>
+              {target ? (
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Reviewing <span className="font-semibold text-slate-600">{target.prediction}</span> at{' '}
+                  {target.confidence}% confidence.
+                </p>
+              ) : (
+                <p className="text-[10px] text-amber-700 mt-1.5 flex items-start gap-1.5">
+                  <TriangleAlert className="w-3 h-3 mt-0.5 shrink-0" />
+                  Run an analysis first — a review has to point at a real prediction.
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">Was Model Prediction Accurate?</label>
               <div className="grid grid-cols-2 gap-2">
@@ -118,7 +162,7 @@ export default function FeedbackPage() {
               <select
                 value={actualAuthorship}
                 onChange={e => setActualAuthorship(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-xl border border-cream-200 bg-cream-50 focus:outline-none focus:ring-2 focus:ring-coral-400"
+                className="field !text-xs cursor-pointer"
               >
                 <option value="human">Human Authored</option>
                 <option value="ai">AI Generated</option>
@@ -134,7 +178,7 @@ export default function FeedbackPage() {
                 onChange={e => setComment(e.target.value)}
                 placeholder="Details regarding why this prediction was confirmed or rejected..."
                 rows={4}
-                className="w-full text-xs p-2.5 rounded-xl border border-cream-200 bg-cream-50 focus:outline-none focus:ring-2 focus:ring-coral-400 resize-none"
+                className="field !text-xs resize-none"
               />
             </div>
 
@@ -146,10 +190,10 @@ export default function FeedbackPage() {
 
             <button
               type="submit"
-              disabled={submitting}
-              className="btn-primary w-full justify-center text-xs py-2.5"
+              disabled={submitting || !target}
+              className="btn-primary btn-block !text-xs"
             >
-              {submitting ? 'Submitting...' : 'Record Review'}
+              {submitting ? 'Submitting...' : 'Record review'}
             </button>
           </form>
         </div>

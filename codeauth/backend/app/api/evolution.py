@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.ml.inference import run_inference
-from app.ml.model import model_manager
+from app.ml.inference import any_engine_ready
 from app.schemas.analysis import EvolutionRequest
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ router = APIRouter()
 @router.post("/evolution/analyze")
 async def analyze_evolution(request: EvolutionRequest, db: Session = Depends(get_db)):
     """Analyze code evolution across multiple versions."""
-    if not model_manager.is_ready:
-        raise HTTPException(status_code=503, detail="ML model is currently unavailable.")
+    if not any_engine_ready():
+        raise HTTPException(status_code=503, detail="No inference engine is loaded. Check /api/health for details.")
 
     if len(request.versions) < 2:
         raise HTTPException(status_code=400, detail="At least 2 versions are required for evolution analysis.")

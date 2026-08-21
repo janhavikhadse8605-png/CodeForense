@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FolderOpen, Plus, Clock, FileCode } from 'lucide-react';
 import { getProjects, createProject } from '../api/client';
 import type { ProjectData } from '../types';
+import PageHeader from '../components/PageHeader';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
@@ -38,18 +39,17 @@ export default function ProjectsPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Saved Projects</h1>
-          <p className="text-sm text-slate-500 mt-1">Organize and track ongoing authorship audits across codebase targets.</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary text-xs py-2.5 px-4 flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" /> New Project
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Saved Projects"
+        eyebrowIcon={<FolderOpen className="w-[15px] h-[15px]" />}
+        title="Project workspaces"
+        description="Group related codebases so repeated authorship reviews stay organised."
+        actions={
+          <button onClick={() => setShowModal(true)} className="btn-primary text-xs !py-2.5 !px-4">
+            <Plus className="w-4 h-4" /> New project
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="text-center py-16 text-slate-500 animate-pulse-gentle">Loading projects...</div>
@@ -110,11 +110,15 @@ export default function ProjectsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowModal(false)}
+        >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-cream-200"
+            className="bg-[var(--surface)] rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-[var(--line)]"
+            onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-slate-800">Create New Project</h3>
             <form onSubmit={handleCreate} className="space-y-3">
@@ -126,7 +130,7 @@ export default function ProjectsPage() {
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="e.g. Core Authentication Service"
-                  className="w-full text-sm p-2.5 rounded-xl border border-cream-200 bg-cream-50 focus:outline-none focus:ring-2 focus:ring-coral-400"
+                  className="field"
                 />
               </div>
               <div>
@@ -136,7 +140,7 @@ export default function ProjectsPage() {
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Brief description of the project codebase..."
                   rows={3}
-                  className="w-full text-sm p-2.5 rounded-xl border border-cream-200 bg-cream-50 focus:outline-none focus:ring-2 focus:ring-coral-400 resize-none"
+                  className="field resize-none"
                 />
               </div>
               <div>
@@ -146,7 +150,7 @@ export default function ProjectsPage() {
                   value={repoUrl}
                   onChange={e => setRepoUrl(e.target.value)}
                   placeholder="https://github.com/org/repo"
-                  className="w-full text-sm p-2.5 rounded-xl border border-cream-200 bg-cream-50 focus:outline-none focus:ring-2 focus:ring-coral-400"
+                  className="field"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-3">

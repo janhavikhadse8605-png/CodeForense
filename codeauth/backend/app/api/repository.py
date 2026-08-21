@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.database.models import Repository
 from app.ml.inference import run_inference
-from app.ml.model import model_manager
+from app.ml.inference import any_engine_ready
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,8 +38,8 @@ async def upload_repository(
     db: Session = Depends(get_db),
 ):
     """Upload a ZIP file containing a repository for analysis."""
-    if not model_manager.is_ready:
-        raise HTTPException(status_code=503, detail="ML model is currently unavailable.")
+    if not any_engine_ready():
+        raise HTTPException(status_code=503, detail="No inference engine is loaded. Check /api/health for details.")
 
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only ZIP files are supported.")
@@ -106,11 +106,12 @@ async def analyze_repository_url(
     repository_url: str = Form(None),
     db: Session = Depends(get_db),
 ):
-    """Analyze a repository from a URL (placeholder for Git integration)."""
+    """Deprecated. GitHub repositories are handled by POST /api/github/analyze."""
     if repository_url:
         return {
-            "message": "Git repository cloning requires Git credentials configuration.",
-            "status": "not_configured",
+            "message": "Use POST /api/github/analyze with {\"repository_url\": ...} instead.",
+            "status": "moved",
+            "endpoint": "/api/github/analyze",
             "repository_url": repository_url,
         }
     raise HTTPException(status_code=400, detail="Please provide a repository URL or upload a ZIP file.")
@@ -137,17 +138,28 @@ async def get_repository(repo_id: str, db: Session = Depends(get_db)):
     }
 
 
-def _analyze_directory(root_path: str) -> dict:
-    """Analyze all source files in a directory."""
+def _analyze_directory(root_path: str, max_files: int = 1000) -> dict:
+    """
+    Analyze every supported source file under a directory.
+
+    `max_files` bounds the work so a large repository cannot tie up a worker
+    indefinitely; the response reports whether the scan was truncated rather than
+    silently returning partial ratios.
+    """
     file_results = []
     total_functions = 0
-    file_tree = {"name": os.path.basename(root_path) or "repository", "type": "directory", "children": []}
+    files_skipped = 0
+    truncated = False
 
     for dirpath, dirnames, filenames in os.walk(root_path):
         # Filter ignored directories
         dirnames[:] = [d for d in dirnames if d not in IGNORED_DIRS]
 
-        for filename in filenames:
+        for filename in sorted(filenames):
+            if len(file_results) >= max_files:
+                truncated = True
+                break
+
             ext = os.path.splitext(filename)[1].lower()
             if ext not in SUPPORTED_EXTENSIONS:
                 continue
@@ -163,7 +175,7 @@ def _analyze_directory(root_path: str) -> dict:
                     continue
 
                 language = SUPPORTED_EXTENSIONS[ext]
-                result = run_inference(code[:50000], language)
+                result = run_inference(code[:50000], language, fast=True)
 
                 file_results.append({
                     "file_path": rel_path,
@@ -178,7 +190,11 @@ def _analyze_directory(root_path: str) -> dict:
 
             except Exception as e:
                 logger.warning(f"Failed to analyze {rel_path}: {e}")
+                files_skipped += 1
                 continue
+
+        if truncated:
+            break
 
     # Calculate ratios
     total = len(file_results)
@@ -198,6 +214,8 @@ def _analyze_directory(root_path: str) -> dict:
 
     return {
         "files_analyzed": total,
+        "files_skipped": files_skipped,
+        "truncated": truncated,
         "functions_analyzed": total_functions,
         "human_ratio": human_ratio,
         "ai_ratio": ai_ratio,

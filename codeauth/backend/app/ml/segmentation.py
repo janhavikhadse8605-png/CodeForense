@@ -5,9 +5,10 @@ Parses code into segments (functions, classes, blocks) and runs
 inference on each segment to detect mixed authorship.
 """
 import ast
-import re
 import logging
 from typing import Optional
+
+from app.ml.patterns import COMBINED_FUNCTION_RE, NON_FUNCTION_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -95,24 +96,13 @@ def _segment_heuristic(code: str, language: str) -> list[dict]:
     segments = []
     lines = code.split("\n")
 
-    # Pattern for function definitions across common languages
-    func_patterns = [
-        r'\bdef\s+([a-zA-Z_]\w*)\s*\(',
-        r'\bfunction\s+([a-zA-Z_]\w*)\s*\(',
-        r'(?:const|let|var)\s+([a-zA-Z_]\w*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>',
-        r'(?:(?:inline|static|virtual|explicit|const|friend|public|private|protected|async|final|override)\s+)*(?:[\w:]+(?:<[^>]+>)?\s+[\*&]?\s*)+([a-zA-Z_]\w*)\s*\([^;{}]*\)\s*(?:const)?\s*(?:override)?\s*(?:noexcept)?\s*\{',
-        r'\bfunc\s+(?:\([^)]*\)\s*)?([a-zA-Z_]\w*)\s*\(',
-        r'\bfn\s+([a-zA-Z_]\w*)\s*\(',
-    ]
-
-    combined_pattern = "|".join(func_patterns)
+    # Backtracking-safe definition patterns shared with the feature extractor.
     current_segment_start = None
     current_segment_name = None
-    brace_depth = 0
 
     for i, line in enumerate(lines):
-        match = re.search(combined_pattern, line)
-        if match:
+        match = COMBINED_FUNCTION_RE.search(line)
+        if match and next((g for g in match.groups() if g), None) not in NON_FUNCTION_NAMES:
             # Save previous segment if exists
             if current_segment_start is not None:
                 seg_code = "\n".join(lines[current_segment_start:i])

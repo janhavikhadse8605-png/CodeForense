@@ -17,6 +17,8 @@ from typing import Optional
 
 import numpy as np
 
+from app.ml.patterns import CLASS_RE, find_function_names
+
 logger = logging.getLogger(__name__)
 
 
@@ -215,27 +217,10 @@ def extract_structure_features(code: str, lines: list, tree, language: str) -> d
         nesting = _max_nesting_depth(tree)
     else:
         node_count = _heuristic_node_count(code)
-        
-        # Multi-language function detection (C++, C, C#, Java, JS, TS, Go, Rust, Python, Ruby)
-        func_patterns = [
-            r'\bdef\s+([a-zA-Z_]\w*)\s*\(',
-            r'\bfunction\s+([a-zA-Z_]\w*)\s*\(',
-            r'(?:const|let|var)\s+([a-zA-Z_]\w*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>',
-            r'(?:(?:inline|static|virtual|explicit|const|friend|public|private|protected|async|final|override)\s+)*(?:[\w:]+(?:<[^>]+>)?\s+[\*&]?\s*)+([a-zA-Z_]\w*)\s*\([^;{}]*\)\s*(?:const)?\s*(?:override)?\s*(?:noexcept)?\s*\{',
-            r'\bfunc\s+(?:\([^)]*\)\s*)?([a-zA-Z_]\w*)\s*\(',
-            r'\bfn\s+([a-zA-Z_]\w*)\s*\(',
-            r'\bdef\s+([a-zA-Z_]\w*)',
-        ]
-        kw_filter = {'if', 'for', 'while', 'switch', 'catch', 'sizeof', 'typeof', 'decltype', 'return', 'class', 'struct'}
-        found_funcs = set()
-        for pat in func_patterns:
-            for m in re.finditer(pat, code):
-                name = next((g for g in m.groups() if g), None)
-                if name and name not in kw_filter:
-                    found_funcs.add(name)
-        funcs = len(found_funcs)
 
-        classes = len(re.findall(r'\b(?:class|struct|interface)\s+\w+', code))
+        # Backtracking-safe multi-language detection; see app.ml.patterns.
+        funcs = len(find_function_names(code))
+        classes = len(CLASS_RE.findall(code))
         loops = len(re.findall(r'\b(?:for|while|do\s*\{|loop)\b', code))
         conditionals = len(re.findall(r'\b(?:if|else\s+if|elif|switch)\b', code))
         branches = conditionals + loops

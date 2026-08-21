@@ -15,6 +15,9 @@ import ReportsPage from './pages/ReportsPage';
 import FeedbackPage from './pages/FeedbackPage';
 import InvestigationPage from './pages/InvestigationPage';
 import SettingsPage from './pages/SettingsPage';
+import HelpPage from './pages/HelpPage';
+import GitHubPage from './pages/GitHubPage';
+import ChatPage from './pages/ChatPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +47,9 @@ export default function App() {
               <Route path="feedback" element={<FeedbackPage />} />
               <Route path="investigation" element={<InvestigationPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="github" element={<GitHubPage />} />
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="help" element={<HelpPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

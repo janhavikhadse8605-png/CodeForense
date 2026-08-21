@@ -1,0 +1,411 @@
+{
+  "dataset": {
+    "source": "LTPhong/CSC15011_Detecting_AI-Generated_Code (Hugging Face)",
+    "note": "test.csv is a disjoint slice of the official validation split; the dataset's own test split returns HTTP 500 from datasets-server.",
+    "splits": {
+      "train": {
+        "rows_used": 2500,
+        "human": 1160,
+        "ai": 1340,
+        "languages": {
+          "python": 2282,
+          "cpp": 112,
+          "java": 106
+        }
+      },
+      "validation": {
+        "rows_used": 2500,
+        "human": 1194,
+        "ai": 1306,
+        "languages": {
+          "python": 2300,
+          "cpp": 109,
+          "java": 91
+        }
+      },
+      "test": {
+        "rows_used": 2500,
+        "human": 1213,
+        "ai": 1287,
+        "languages": {
+          "python": 2298,
+          "cpp": 113,
+          "java": 89
+        }
+      }
+    }
+  },
+  "protocol": {
+    "features": "41 stylometric features via app.ml.features",
+    "selection": "5-fold StratifiedKFold CV on train, model chosen by validation macro F1",
+    "test_usage": "evaluated once after selection"
+  },
+  "candidates": {
+    "logistic_regression": {
+      "cv_f1_macro_mean": 0.9031,
+      "cv_f1_macro_std": 0.0181,
+      "validation": {
+        "n": 2500,
+        "accuracy": 0.8996,
+        "precision_ai": 0.9042,
+        "recall_ai": 0.9035,
+        "f1_macro": 0.8994,
+        "f1_weighted": 0.8996,
+        "confusion_matrix": [
+          [
+            1069,
+            125
+          ],
+          [
+            126,
+            1180
+          ]
+        ],
+        "confusion_labels": [
+          "HUMAN",
+          "AI"
+        ],
+        "roc_auc": 0.9552
+      }
+    },
+    "random_forest": {
+      "cv_f1_macro_mean": 0.9556,
+      "cv_f1_macro_std": 0.0065,
+      "validation": {
+        "n": 2500,
+        "accuracy": 0.9556,
+        "precision_ai": 0.9449,
+        "recall_ai": 0.9717,
+        "f1_macro": 0.9554,
+        "f1_weighted": 0.9556,
+        "confusion_matrix": [
+          [
+            1120,
+            74
+          ],
+          [
+            37,
+            1269
+          ]
+        ],
+        "confusion_labels": [
+          "HUMAN",
+          "AI"
+        ],
+        "roc_auc": 0.9908
+      }
+    },
+    "hist_gradient_boosting": {
+      "cv_f1_macro_mean": 0.9662,
+      "cv_f1_macro_std": 0.0081,
+      "validation": {
+        "n": 2500,
+        "accuracy": 0.9696,
+        "precision_ai": 0.9709,
+        "recall_ai": 0.9709,
+        "f1_macro": 0.9695,
+        "f1_weighted": 0.9696,
+        "confusion_matrix": [
+          [
+            1156,
+            38
+          ],
+          [
+            38,
+            1268
+          ]
+        ],
+        "confusion_labels": [
+          "HUMAN",
+          "AI"
+        ],
+        "roc_auc": 0.9944
+      }
+    }
+  },
+  "selected_model": "hist_gradient_boosting",
+  "test_metrics": {
+    "n": 2500,
+    "accuracy": 0.9648,
+    "precision_ai": 0.9601,
+    "recall_ai": 0.972,
+    "f1_macro": 0.9648,
+    "f1_weighted": 0.9648,
+    "confusion_matrix": [
+      [
+        1161,
+        52
+      ],
+      [
+        36,
+        1251
+      ]
+    ],
+    "confusion_labels": [
+      "HUMAN",
+      "AI"
+    ],
+    "roc_auc": 0.9931
+  },
+  "per_language": {
+    "cpp": {
+      "n": 113,
+      "accuracy": 0.8142,
+      "precision_ai": 0.7581,
+      "recall_ai": 0.8868,
+      "f1_macro": 0.8141,
+      "f1_weighted": 0.8139,
+      "confusion_matrix": [
+        [
+          45,
+          15
+        ],
+        [
+          6,
+          47
+        ]
+      ],
+      "confusion_labels": [
+        "HUMAN",
+        "AI"
+      ],
+      "roc_auc": 0.8969
+    },
+    "java": {
+      "n": 89,
+      "accuracy": 0.764,
+      "precision_ai": 0.7333,
+      "recall_ai": 0.898,
+      "f1_macro": 0.7515,
+      "f1_weighted": 0.7571,
+      "confusion_matrix": [
+        [
+          24,
+          16
+        ],
+        [
+          5,
+          44
+        ]
+      ],
+      "confusion_labels": [
+        "HUMAN",
+        "AI"
+      ],
+      "roc_auc": 0.9128
+    },
+    "python": {
+      "n": 2298,
+      "accuracy": 0.98,
+      "precision_ai": 0.9822,
+      "recall_ai": 0.9789,
+      "f1_macro": 0.98,
+      "f1_weighted": 0.98,
+      "confusion_matrix": [
+        [
+          1092,
+          21
+        ],
+        [
+          25,
+          1160
+        ]
+      ],
+      "confusion_labels": [
+        "HUMAN",
+        "AI"
+      ],
+      "roc_auc": 0.9967
+    }
+  },
+  "per_generator_recall": {
+    "01-ai/Yi-Coder-9B": {
+      "n": 52,
+      "recall": 0.9615
+    },
+    "google/codegemma-7b": {
+      "n": 31,
+      "recall": 0.9677
+    },
+    "Qwen/Qwen2.5-Coder-1.5B": {
+      "n": 26,
+      "recall": 0.9615
+    },
+    "bigcode/starcoder2-7b": {
+      "n": 31,
+      "recall": 0.9355
+    },
+    "deepseek-ai/deepseek-coder-1.3b-base": {
+      "n": 21,
+      "recall": 1.0
+    },
+    "meta-llama/Llama-3.1-8B": {
+      "n": 35,
+      "recall": 1.0
+    },
+    "Qwen/Qwen2.5-Coder-7B-Instruct": {
+      "n": 19,
+      "recall": 0.8947
+    },
+    "codellama/CodeLlama-34b-Instruct-hf": {
+      "n": 39,
+      "recall": 0.9744
+    },
+    "Qwen/Qwen2.5-Coder-32B-Instruct": {
+      "n": 36,
+      "recall": 1.0
+    },
+    "microsoft/Phi-3-medium-4k-instruct": {
+      "n": 68,
+      "recall": 0.9853
+    },
+    "deepseek-ai/deepseek-coder-6.7b-base": {
+      "n": 31,
+      "recall": 0.9677
+    },
+    "01-ai/Yi-Coder-1.5B": {
+      "n": 48,
+      "recall": 1.0
+    },
+    "meta-llama/Llama-3.2-3B": {
+      "n": 43,
+      "recall": 0.907
+    },
+    "codellama/CodeLlama-7b-hf": {
+      "n": 35,
+      "recall": 0.9714
+    },
+    "google/codegemma-2b": {
+      "n": 42,
+      "recall": 0.9524
+    },
+    "Qwen/Qwen2.5-Coder-1.5B-Instruct": {
+      "n": 44,
+      "recall": 0.9545
+    },
+    "microsoft/Phi-3-mini-4k-instruct": {
+      "n": 43,
+      "recall": 0.9767
+    },
+    "bigcode/starcoder": {
+      "n": 41,
+      "recall": 0.9512
+    },
+    "01-ai/Yi-Coder-1.5B-Chat": {
+      "n": 22,
+      "recall": 0.9545
+    },
+    "bigcode/starcoder2-3b": {
+      "n": 34,
+      "recall": 1.0
+    },
+    "codellama/CodeLlama-70b-Instruct-hf": {
+      "n": 52,
+      "recall": 1.0
+    },
+    "microsoft/Phi-3.5-mini-instruct": {
+      "n": 49,
+      "recall": 0.9796
+    },
+    "Qwen/Qwen2.5-Coder-7B": {
+      "n": 45,
+      "recall": 0.9778
+    },
+    "microsoft/Phi-3-small-8k-instruct": {
+      "n": 57,
+      "recall": 1.0
+    },
+    "deepseek-ai/deepseek-coder-6.7b-instruct": {
+      "n": 27,
+      "recall": 1.0
+    },
+    "meta-llama/Llama-3.3-70B-Instruct": {
+      "n": 46,
+      "recall": 0.9783
+    },
+    "microsoft/phi-2": {
+      "n": 49,
+      "recall": 0.9796
+    },
+    "ibm-granite/granite-8b-code-base-4k": {
+      "n": 37,
+      "recall": 0.9459
+    },
+    "01-ai/Yi-Coder-9B-Chat": {
+      "n": 44,
+      "recall": 0.9773
+    },
+    "deepseek-ai/deepseek-coder-1.3b-instruct": {
+      "n": 16,
+      "recall": 0.9375
+    },
+    "ibm-granite/granite-8b-code-instruct-4k": {
+      "n": 25,
+      "recall": 1.0
+    },
+    "bigcode/starcoder2-15b": {
+      "n": 42,
+      "recall": 0.9524
+    },
+    "meta-llama/Llama-3.2-1B": {
+      "n": 18,
+      "recall": 0.9444
+    },
+    "meta-llama/Llama-3.1-8B-Instruct": {
+      "n": 39,
+      "recall": 0.9744
+    }
+  },
+  "feature_importance": {
+    "indentation_consistency": 0.28067,
+    "comment_code_ratio": 0.04212,
+    "blank_line_ratio": 0.03101,
+    "class_count": 0.01415,
+    "max_nesting_depth": 0.0114,
+    "whitespace_consistency": 0.00731,
+    "identifier_length_variance": 0.0061,
+    "avg_identifier_length": 0.00544,
+    "formatting_score": 0.00465,
+    "branch_count": 0.00348,
+    "ast_node_count": 0.00296,
+    "return_count": 0.00289,
+    "repeated_token_ratio": 0.00226,
+    "repeated_statement_count": 0.00153,
+    "function_count": 0.00144,
+    "line_length_variance": 0.00129,
+    "snake_case_ratio": 0.00104,
+    "comments_per_function": 0.00096,
+    "boolean_expression_count": 0.00088,
+    "comment_words": 0.00081,
+    "max_complexity": 0.0008,
+    "repeated_block_count": 0.0008,
+    "repetition_score": 0.00072,
+    "single_char_ratio": 0.00064,
+    "loop_count": 0.00064,
+    "camel_case_ratio": 0.00049,
+    "uppercase_ratio": 0.0004,
+    "identifier_count": 0.00032,
+    "avg_nesting_depth": 0.00016,
+    "avg_line_length": 0.00016,
+    "avg_complexity": 8e-05,
+    "exception_handling_count": 0.0,
+    "docstring_count": 0.0,
+    "avg_comment_length": -0.0,
+    "cx_branch_count": -0.00023,
+    "comment_count": -0.00032,
+    "duplicate_line_ratio": -0.00039,
+    "conditional_count": -0.0004,
+    "cx_loop_count": -0.00048,
+    "naming_consistency": -0.00064,
+    "lines_of_code": -0.00096
+  },
+  "group_importance_share": {
+    "naming": 3.3,
+    "structure": 8.4,
+    "comments": 10.3,
+    "repetition": 1.2,
+    "complexity": 0.3,
+    "formatting": 76.6
+  },
+  "artifact": "model_files/stylometric_model.pkl"
+}
