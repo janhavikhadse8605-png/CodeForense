@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.database.models import EvaluationRun
 from app.ml.inference import run_inference
-from app.ml.model import model_manager
+from app.ml.inference import any_engine_ready
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,8 +27,8 @@ async def run_evaluation(
 
     Expected columns: code_content, language (optional), authorship_class (HUMAN/AI)
     """
-    if not model_manager.is_ready:
-        raise HTTPException(status_code=503, detail="ML model is currently unavailable.")
+    if not any_engine_ready():
+        raise HTTPException(status_code=503, detail="No inference engine is loaded. Check /api/health for details.")
 
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported.")
@@ -82,7 +82,7 @@ async def run_evaluation(
             else:
                 continue
 
-            result = run_inference(code, language)
+            result = run_inference(code, language, fast=True)
 
             if "HUMAN" in result["prediction"]:
                 y_pred.append(0)

@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { BarChart3, Upload, AlertCircle, FileSpreadsheet, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { runEvaluation, getLatestEvaluation, getModelInfo } from '../api/client';
 import type { EvaluationResult, ModelInfo } from '../types';
+import PageHeader from '../components/PageHeader';
+import ModelWarnings from '../components/ModelWarnings';
 
 export default function EvaluationPage() {
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
@@ -38,27 +40,21 @@ export default function EvaluationPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Model Evaluation & Benchmark</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Empirical validation metrics, confusion matrix, and custom dataset evaluation for the trained hybrid model.
-          </p>
-        </div>
-        <div>
-          <label className="btn-primary text-xs py-2.5 px-4 cursor-pointer inline-flex items-center gap-1.5">
+      <PageHeader
+        eyebrow="Model Evaluation"
+        eyebrowIcon={<BarChart3 className="w-[15px] h-[15px]" />}
+        title="Measure the model on your own data"
+        description="Upload a labelled CSV to compute accuracy, precision, recall, F1, and a confusion matrix. Every row is scored by the live model — nothing here is estimated."
+        actions={
+          <label className="btn-primary text-xs !py-2.5 !px-4 cursor-pointer">
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload Evaluation CSV</span>
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileUpload}
-              disabled={loading}
-            />
+            <span>Upload evaluation CSV</span>
+            <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} disabled={loading} />
           </label>
-        </div>
-      </div>
+        }
+      />
+
+      <ModelWarnings />
 
       {loading && (
         <div className="card p-12 text-center">
@@ -205,7 +201,7 @@ export default function EvaluationPage() {
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800">Retrained Checkpoint Benchmark</h3>
+                  <h3 className="font-semibold text-slate-800">Reported checkpoint metadata</h3>
                   <p className="text-xs text-slate-500">
                     Metadata from <span className="font-mono text-coral-600">authorship_final_model</span> checkpoint
                   </p>
@@ -214,26 +210,31 @@ export default function EvaluationPage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard
-                  label="Test Accuracy"
+                  label="Recorded accuracy"
                   value={`${(modelInfo.test_accuracy * 100).toFixed(2)}%`}
-                  sub="Trained validation benchmark"
+                  sub="From checkpoint metadata"
                 />
                 <MetricCard
-                  label="Base Model"
+                  label="Base model"
                   value="CodeBERT"
-                  sub="microsoft/codebert-base"
+                  sub={modelInfo.base_model || 'microsoft/codebert-base'}
                 />
                 <MetricCard
                   label="Device"
-                  value={modelInfo.device?.toUpperCase() || 'CPU'}
-                  sub="Hardware accelerated"
+                  value={modelInfo.device ? modelInfo.device.toUpperCase() : 'UNKNOWN'}
+                  sub="Reported by backend"
                 />
                 <MetricCard
-                  label="Status"
-                  value="Ready"
-                  sub={modelInfo.trained_timestamp ? new Date(modelInfo.trained_timestamp).toLocaleDateString() : 'Active'}
+                  label="Model state"
+                  value={modelInfo.is_ready ? 'Loaded' : 'Not loaded'}
+                  sub={modelInfo.trained_timestamp || 'No training timestamp'}
                 />
               </div>
+
+              <p className="mt-4 text-[0.7rem] leading-relaxed text-slate-500">
+                This figure was written into the checkpoint at training time and describes that held-out split only.
+                It is not a measurement on your data — upload a CSV above for that.
+              </p>
             </div>
           )}
 
@@ -243,7 +244,10 @@ export default function EvaluationPage() {
             </div>
             <h3 className="font-semibold text-slate-700">Custom Dataset Benchmarking</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Upload a labeled CSV above (with <code className="bg-cream-200 px-1 py-0.5 rounded text-coral-600">code</code> and <code className="bg-cream-200 px-1 py-0.5 rounded text-coral-600">label</code> columns) to compute a full empirical confusion matrix, precision, recall, and ROC-AUC for this retrained model.
+              Upload a labelled CSV above with a <code className="bg-cream-200 px-1 py-0.5 rounded text-coral-600">code_content</code> column and an
+              {' '}<code className="bg-cream-200 px-1 py-0.5 rounded text-coral-600">authorship_class</code> column
+              (<code className="text-slate-800">HUMAN</code> or <code className="text-slate-800">AI</code>) to compute a
+              confusion matrix, precision, recall, and ROC-AUC.
             </p>
           </div>
         </div>

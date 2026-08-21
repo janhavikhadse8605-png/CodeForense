@@ -1,0 +1,11 @@
+{
+  "_comment": "MCP servers CodeAuth's investigation agent may call. Same shape as Claude Desktop / Claude Code, so an existing mcpServers block can be pasted in. Only servers declared here can ever be spawned — the HTTP API can reference them by name but never supply a command.",
+  "mcpServers": {
+    "codeauth": {
+      "command": "python3",
+      "args": ["mcp_server.py"],
+      "description": "CodeAuth's own authorship-analysis tools, over MCP.",
+      "enabled": true
+    }
+  }
+}

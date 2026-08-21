@@ -1,9 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-import {
-  Play, Upload, Trash2, Code2, ChevronDown, Sparkles, AlertTriangle,
-} from 'lucide-react';
+import { Play, Upload, Trash2, Code2, Sparkles, AlertTriangle } from 'lucide-react';
 import { analyzeCode } from '../api/client';
 import ResultCard from '../components/ResultCard';
 import EvidenceBars from '../components/EvidenceBars';
@@ -12,20 +10,10 @@ import AnalysisLoading from '../components/AnalysisLoading';
 import FeatureDetails from '../components/FeatureDetails';
 import type { AnalysisResult } from '../types';
 import { useTheme } from '../hooks/useTheme';
-
-const languages = [
-  { value: 'python', label: 'Python' },
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'java', label: 'Java' },
-  { value: 'c', label: 'C' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'go', label: 'Go' },
-  { value: 'rust', label: 'Rust' },
-  { value: 'php', label: 'PHP' },
-  { value: 'ruby', label: 'Ruby' },
-];
+import PageHeader from '../components/PageHeader';
+import LanguageSelect from '../components/LanguageSelect';
+import ModelWarnings from '../components/ModelWarnings';
+import { loadPreferences } from '../hooks/usePreferences';
 
 const DEMO_CODE = `def calculate_fibonacci(n):
     """Calculate the nth Fibonacci number using dynamic programming."""
@@ -86,7 +74,7 @@ const monacoLanguageMap: Record<string, string> = {
 
 export default function AnalysisPage() {
   const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('python');
+  const [language, setLanguage] = useState(() => loadPreferences().defaultLanguage);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -153,28 +141,21 @@ export default function AnalysisPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Code Analysis</h1>
-        <p className="text-sm text-slate-500 mt-1">Paste source code to analyze authorship characteristics</p>
-      </div>
+      <PageHeader
+        eyebrow="Code Analysis"
+        eyebrowIcon={<Code2 className="w-[15px] h-[15px]" />}
+        title="Analyze a code snippet"
+        description="Paste or upload source code for a full authorship assessment: verdict, ablation evidence, a section-level heatmap, and every extracted feature."
+      />
+
+      <ModelWarnings compact severity="high" />
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Left: Editor */}
         <div className="lg:col-span-3 space-y-4">
           {/* Toolbar */}
           <div className="card p-3 flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <select
-                value={language}
-                onChange={e => setLanguage(e.target.value)}
-                className="appearance-none bg-cream-100 border border-cream-200 text-sm rounded-xl px-4 py-2 pr-8 text-slate-700 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-coral-400"
-              >
-                {languages.map(l => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
+            <LanguageSelect value={language} onChange={setLanguage} />
 
             <button onClick={() => fileInputRef.current?.click()} className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5" /> Upload

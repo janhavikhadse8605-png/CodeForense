@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Fingerprint, Search, AlertCircle, Info, FileCode } from 'lucide-react';
 import { analyzeSimilarity } from '../api/client';
+import PageHeader from '../components/PageHeader';
+import LanguageSelect, { LanguageCaveat } from '../components/LanguageSelect';
 
 const SAMPLE_QUERY = `def binary_search(array, target):
     low = 0
@@ -18,7 +20,7 @@ const SAMPLE_QUERY = `def binary_search(array, target):
 
 export default function SimilarityPage() {
   const [code, setCode] = useState(SAMPLE_QUERY);
-  const [language] = useState('python');
+  const [language, setLanguage] = useState('python');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +44,15 @@ export default function SimilarityPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Code Embedding & Similarity Analysis</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Compare submitted code embeddings against reference samples in latent representation space.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Similarity"
+        eyebrowIcon={<Fingerprint className="w-[15px] h-[15px]" />}
+        title="Embedding similarity search"
+        description="Compare a snippet against previously analyzed samples using cosine distance in the 64-dimensional fusion embedding space."
+        actions={<LanguageSelect value={language} onChange={setLanguage} />}
+      />
+
+      <LanguageCaveat language={language} />
 
       <div className="card p-4 bg-amber-50/50 border-amber-200 flex items-start gap-2.5 text-xs text-amber-800">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -72,7 +77,7 @@ export default function SimilarityPage() {
             value={code}
             onChange={e => setCode(e.target.value)}
             rows={14}
-            className="w-full font-mono text-xs p-3.5 rounded-xl bg-cream-50 border border-cream-200 focus:ring-2 focus:ring-coral-400 focus:outline-none resize-none"
+            className="field font-mono !text-xs resize-none"
             placeholder="Paste code snippet to compute 64-dim fusion embedding..."
           />
           <button
@@ -121,7 +126,7 @@ export default function SimilarityPage() {
                         </div>
                       </div>
                       {m.snippet && (
-                        <pre className="font-mono text-[11px] p-2.5 rounded-lg bg-cream-50 text-slate-600 overflow-x-auto">
+                        <pre className="font-mono text-[11px] p-2.5 rounded-lg bg-[var(--surface-sunken)] border border-[var(--line)] text-[var(--text-body)] overflow-x-auto">
                           {m.snippet}
                         </pre>
                       )}

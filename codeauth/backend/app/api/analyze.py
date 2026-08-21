@@ -14,7 +14,7 @@ from app.schemas.analysis import (
 )
 from app.ml.inference import run_inference, run_inference_for_segment
 from app.ml.segmentation import segment_code, analyze_mixed_authorship
-from app.ml.model import model_manager
+from app.ml.inference import any_engine_ready
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,8 +27,8 @@ async def analyze_code(request: AnalyzeRequest, db: Session = Depends(get_db)):
 
     Returns prediction, confidence, evidence, statistics, and function-level results.
     """
-    if not model_manager.is_ready:
-        raise HTTPException(status_code=503, detail="ML model is currently unavailable. Check /api/health for details.")
+    if not any_engine_ready():
+        raise HTTPException(status_code=503, detail="No inference engine is loaded. Check /api/health for details.")
 
     if not request.code.strip():
         raise HTTPException(status_code=400, detail="Please enter source code before analysis.")
@@ -134,6 +134,10 @@ async def analyze_code(request: AnalyzeRequest, db: Session = Depends(get_db)):
             mixed_authorship=mixed,
             language=request.language,
             created_at=analysis.created_at.isoformat(),
+            engine=result.get("engine", ""),
+            engine_detail=result.get("engine_detail", ""),
+            engine_agreement=result.get("engine_agreement"),
+            caveats=result.get("caveats", []),
         )
 
     except RuntimeError as e:
@@ -146,8 +150,8 @@ async def analyze_code(request: AnalyzeRequest, db: Session = Depends(get_db)):
 @router.post("/analyze/function-level")
 async def analyze_function_level(request: FunctionLevelRequest, db: Session = Depends(get_db)):
     """Analyze code at function/segment level only."""
-    if not model_manager.is_ready:
-        raise HTTPException(status_code=503, detail="ML model is currently unavailable.")
+    if not any_engine_ready():
+        raise HTTPException(status_code=503, detail="No inference engine is loaded. Check /api/health for details.")
 
     segments = segment_code(request.code, request.language)
     segment_results = []

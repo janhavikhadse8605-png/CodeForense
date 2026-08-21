@@ -1,0 +1,86 @@
+{
+  "samples": 600,
+  "engines": {
+    "hybrid": {
+      "engine": "HYBRID CodeBERT + feature MLP fusion",
+      "n": 600,
+      "accuracy": 0.73,
+      "precision_ai": 0.806,
+      "recall_ai": 0.6151,
+      "f1_macro": 0.7269,
+      "confusion_matrix": [
+        [
+          251,
+          45
+        ],
+        [
+          117,
+          187
+        ]
+      ],
+      "predicts_ai_rate": 0.3867,
+      "true_ai_rate": 0.5067,
+      "mean_ai_prob_on_human_truth": 0.1586,
+      "mean_ai_prob_on_ai_truth": 0.6134,
+      "per_language": {
+        "cpp": {
+          "n": 34,
+          "accuracy": 0.5294,
+          "f1_macro": 0.3462
+        },
+        "java": {
+          "n": 24,
+          "accuracy": 0.5833,
+          "f1_macro": 0.4958
+        },
+        "python": {
+          "n": 542,
+          "accuracy": 0.7491,
+          "f1_macro": 0.748
+        }
+      },
+      "roc_auc": 0.7089
+    },
+    "stylometric": {
+      "engine": "STYLOMETRIC gradient boosting",
+      "n": 600,
+      "accuracy": 0.9683,
+      "precision_ai": 0.9612,
+      "recall_ai": 0.977,
+      "f1_macro": 0.9683,
+      "confusion_matrix": [
+        [
+          284,
+          12
+        ],
+        [
+          7,
+          297
+        ]
+      ],
+      "predicts_ai_rate": 0.515,
+      "true_ai_rate": 0.5067,
+      "mean_ai_prob_on_human_truth": 0.0444,
+      "mean_ai_prob_on_ai_truth": 0.9718,
+      "per_language": {
+        "cpp": {
+          "n": 34,
+          "accuracy": 0.7941,
+          "f1_macro": 0.7939
+        },
+        "java": {
+          "n": 24,
+          "accuracy": 0.8333,
+          "f1_macro": 0.8286
+        },
+        "python": {
+          "n": 542,
+          "accuracy": 0.9852,
+          "f1_macro": 0.9852
+        }
+      },
+      "roc_auc": 0.9892
+    }
+  },
+  "checkpoint_metadata_claim": 0.9832076764907471
+}

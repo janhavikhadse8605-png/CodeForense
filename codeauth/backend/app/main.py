@@ -18,7 +18,10 @@ from app.config import settings
 from app.database.session import get_db, init_db
 from app.database.models import Analysis, Project, Report
 from app.ml.model import model_manager
-from app.api import analyze, repository, evolution, evaluation, feedback, similarity, investigation
+from app.ml.stylometric import stylometric_model
+from app.ml.model_cards import model_card
+from app.ml.inference import engines_available, any_engine_ready
+from app.api import analyze, repository, evolution, evaluation, feedback, similarity, investigation, github, chat, mcp
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -35,18 +38,41 @@ async def lifespan(app: FastAPI):
     init_db()
     logger.info("Database initialized")
 
-    # Load ML model
-    logger.info(f"Loading model from: {settings.model_dir}")
-    success = model_manager.load(settings.model_dir, settings.device)
+    # Load both inference engines independently — either alone is enough to serve.
+    logger.info(f"Loading models from: {settings.model_dir}")
 
-    if success:
-        logger.info("MODEL VALIDATION PASSED — Model ready for inference")
+    hybrid_ok = model_manager.load(settings.model_dir, settings.device)
+    if hybrid_ok:
+        logger.info("Hybrid CodeBERT checkpoint ready")
     else:
-        logger.error(f"MODEL LOADING FAILED: {model_manager.load_error}")
-        logger.error("The backend will start but /api/analyze will return 503")
+        logger.warning(f"Hybrid checkpoint unavailable: {model_manager.load_error}")
+
+    stylometric_ok = stylometric_model.load(settings.model_path / "stylometric_model.pkl")
+    if stylometric_ok:
+        logger.info(
+            "Stylometric model ready (%s, held-out accuracy=%s)",
+            stylometric_model.model_name,
+            stylometric_model.test_metrics.get("accuracy"),
+        )
+    else:
+        logger.warning(f"Stylometric model unavailable: {stylometric_model.load_error}")
+
+    if any_engine_ready():
+        logger.info("INFERENCE READY — engines: %s", engines_available())
+    else:
+        logger.error("NO ENGINE LOADED — analysis endpoints will return 503")
+
+    # Report MCP wiring at boot so a misconfigured server is obvious immediately.
+    from app.services.mcp_client import mcp_registry
+    if mcp_registry.configured:
+        logger.info("MCP configured: %s", ", ".join(mcp_registry.configs))
+    else:
+        logger.info("MCP: no servers configured (mcp_servers.json)")
 
     yield
 
+    # Child MCP processes are ours to reap.
+    mcp_registry.shutdown()
     logger.info("CodeAuth shutting down")
 
 
@@ -74,23 +100,39 @@ app.include_router(evaluation.router, prefix="/api", tags=["Evaluation"])
 app.include_router(feedback.router, prefix="/api", tags=["Feedback"])
 app.include_router(similarity.router, prefix="/api", tags=["Similarity"])
 app.include_router(investigation.router, prefix="/api", tags=["Investigation"])
+app.include_router(github.router, prefix="/api", tags=["GitHub"])
+app.include_router(chat.router, prefix="/api", tags=["Chat"])
+app.include_router(mcp.router, prefix="/api", tags=["MCP"])
 
 
 # ─── Health ────────────────────────────────────────────────────────────
 
 @app.get("/api/health")
 async def health_check():
-    """Health check with model status."""
-    status = model_manager.get_status()
+    """Health check covering both inference engines."""
+    hybrid = model_manager.get_status()
+    stylo = stylometric_model.status()
+    engines = engines_available()
+    ready = any(engines.values())
+
+    # Surface whichever engine is missing, so the UI can say something specific.
+    errors = [e for e in (hybrid["error"], stylo["error"]) if e]
+
     return {
-        "status": "ok" if status["is_ready"] else "degraded",
-        "model_status": "ready" if status["is_ready"] else "error",
-        "model_device": status["device"],
-        "model_error": status["error"],
+        "status": "ok" if all(engines.values()) else ("degraded" if ready else "error"),
+        "model_status": "ready" if ready else "error",
+        "model_device": hybrid["device"],
+        "model_error": None if ready else ("; ".join(errors) or "no engine loaded"),
+        "engine_warnings": errors if ready else [],
+        "engines": engines,
+        # Must match the ordering in app.ml.inference.run_inference: the
+        # stylometric model decides, because it measures better on held-out data.
+        "primary_engine": "stylometric" if engines["stylometric"] else ("hybrid" if engines["hybrid"] else None),
+        "stylometric": stylo,
         "database_status": "ok",
-        "version": "1.0.0",
-        "validation_steps": status["validation_steps"],
-        "model_metadata": status["metadata"],
+        "version": "2.0.0",
+        "validation_steps": hybrid["validation_steps"],
+        "model_metadata": hybrid["metadata"],
     }
 
 
@@ -350,11 +392,20 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
 
 # ─── Model Info ────────────────────────────────────────────────────────
 
+@app.get("/api/model/card")
+async def get_model_card():
+    """Measured facts about every engine, assembled from ml_training artifacts."""
+    return model_card.get()
+
+
 @app.get("/api/model/info")
 async def get_model_info():
     """Get model architecture and metadata information."""
     metadata = model_manager.metadata
+    stylo = stylometric_model.status()
     return {
+        "engines": engines_available(),
+        "stylometric_engine": stylo,
         "model_name": "Hybrid CodeBERT Authorship Model",
         "base_model": metadata.get("model_name", "microsoft/codebert-base"),
         "architecture": {
@@ -375,4 +426,7 @@ async def get_model_info():
         "trained_timestamp": metadata.get("timestamp"),
         "is_ready": model_manager.is_ready,
         "device": str(model_manager.device),
+        "inference_ready": any_engine_ready(),
+        "measured": (model_card.get().get("headline") or {}),
+        "warnings": (model_card.get().get("warnings") or []),
     }

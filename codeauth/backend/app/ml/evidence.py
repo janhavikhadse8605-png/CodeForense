@@ -22,6 +22,7 @@ def compute_evidence(
     attention_mask: torch.Tensor,
     feature_tensors: dict[str, torch.Tensor],
     device: torch.device,
+    ai_index: int = 1,
 ) -> dict[str, float]:
     """
     Compute feature group contributions via ablation.
@@ -42,7 +43,7 @@ def compute_evidence(
         # Baseline prediction with all features
         baseline_logits = model(input_ids, attention_mask, feature_tensors)
         baseline_probs = torch.softmax(baseline_logits, dim=1).cpu().numpy()[0]
-        baseline_ai_prob = float(baseline_probs[1])  # AI class index = 1
+        baseline_ai_prob = float(baseline_probs[ai_index])
 
         contributions = {}
 
@@ -58,7 +59,7 @@ def compute_evidence(
             # Run model with ablated features
             ablated_logits = model(input_ids, attention_mask, ablated_features)
             ablated_probs = torch.softmax(ablated_logits, dim=1).cpu().numpy()[0]
-            ablated_ai_prob = float(ablated_probs[1])
+            ablated_ai_prob = float(ablated_probs[ai_index])
 
             # Contribution = how much removing this group changes the prediction
             raw_contribution = abs(baseline_ai_prob - ablated_ai_prob)

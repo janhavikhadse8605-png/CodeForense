@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "source": "python-stdlib (3.9.6)",
+      "n": 150,
+      "false_positive_rate": 0.64,
+      "high_confidence_fp_rate": 0.5667,
+      "mean_ai_probability": 0.6876,
+      "median_ai_probability": 0.987,
+      "seconds": 3.7,
+      "worst_offenders": [
+        {
+          "file": "hex_codec.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "utf_16_be.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "__init__.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "error.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "dbapi2.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "crypt.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "copyreg.py",
+          "ai_probability": 1.0
+        },
+        {
+          "file": "symbol.py",
+          "ai_probability": 1.0
+        }
+      ]
+    }
+  ]
+}

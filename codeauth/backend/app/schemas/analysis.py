@@ -37,6 +37,11 @@ class AnalysisResponse(BaseModel):
     mixed_authorship: Optional[dict] = None
     language: str
     created_at: str
+    # Which engine decided, whether the two engines agreed, and any honesty caveats.
+    engine: str = ""
+    engine_detail: str = ""
+    engine_agreement: Optional[dict] = None
+    caveats: list[str] = []
 
 
 class FunctionLevelRequest(BaseModel):
@@ -48,6 +53,31 @@ class FunctionLevelRequest(BaseModel):
 
 class RepositoryAnalyzeRequest(BaseModel):
     repository_url: Optional[str] = None
+
+
+# ─── GitHub ────────────────────────────────────────────────────────────
+
+class GitHubInspectRequest(BaseModel):
+    repository_url: str = Field(..., description="github.com URL, git@ URL, or owner/repo")
+    commit_limit: int = Field(default=30, ge=1, le=100)
+    # Never persisted or logged; used only for this request's Authorization header.
+    token: Optional[str] = Field(default=None, description="Optional PAT for private repos")
+
+
+class GitHubAnalyzeRequest(BaseModel):
+    repository_url: str = Field(..., description="github.com URL, git@ URL, or owner/repo")
+    max_files: int = Field(default=300, ge=1, le=2000, description="Cap files scanned")
+    include_commits: bool = True
+    commit_limit: int = Field(default=30, ge=1, le=100)
+    token: Optional[str] = None
+
+
+class GitHubEvolutionRequest(BaseModel):
+    repository_url: str
+    file_path: str = Field(..., min_length=1, description="Path within the repository")
+    commit_limit: int = Field(default=12, ge=2, le=50)
+    language: Optional[str] = None
+    token: Optional[str] = None
 
 
 class FileResult(BaseModel):
@@ -194,6 +224,24 @@ class ProjectResponse(BaseModel):
     last_analyzed: Optional[str] = None
     file_count: int
     created_at: str
+
+
+# ─── Chat ──────────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    message: str = Field(default="", description="User question, or code in a ``` block")
+    # Kept for future multi-turn support; the current router is stateless.
+    history: list[dict] = Field(default_factory=list)
+
+
+# ─── MCP ───────────────────────────────────────────────────────────────
+
+class MCPCallRequest(BaseModel):
+    # A server *name* from mcp_servers.json. Callers can never supply a command,
+    # so this endpoint cannot be used to spawn an arbitrary process.
+    server: str = Field(..., min_length=1, description="Configured MCP server name")
+    tool: str = Field(..., min_length=1, description="Tool name to invoke")
+    arguments: dict = Field(default_factory=dict)
 
 
 # ─── Investigation ─────────────────────────────────────────────────────
